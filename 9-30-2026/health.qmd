@@ -1,0 +1,38 @@
+```{python} 
+# Using Python
+# Option 1: pydytuesday python library
+## pip install pydytuesday
+
+import polars as pl
+from lets_plot import *
+LetsPlot.setup_html()
+
+# Option 2: Read directly from GitHub and assign to an object
+
+health = pl.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2026/2026-09-29/health.csv')
+```
+
+
+```{python}
+df = (
+    health
+    .with_columns(
+        pl.col("HL_FCL_HOS_2024")
+        .str.replace_all(",", "")          # remove thousands separators
+        .str.replace_all("%", "")          # remove percent signs if present
+        .str.strip_chars()                 # trim whitespace
+        .replace("NA", None)               # turn literal "NA" into null
+        .cast(pl.Float64, strict=False)    # now convert to number
+    )
+    .drop_nulls("HL_FCL_HOS_2024")
+    .sort("HL_FCL_HOS_2024", descending=True)
+    .head(10)
+)
+
+(
+    ggplot(df, aes(x=as_discrete("GC_CNT_GAD_2025", order_by="HL_FCL_HOS_2024", order=-1),
+                   y="HL_FCL_HOS_2024"))
+    + geom_bar(stat="identity")
+)
+
+```
